@@ -35,3 +35,8 @@ class EventCreate(BaseModel):
 
 class EventResponse(EventCreate):
     id: str
+
+
+class EventListResponse(BaseModel):
+    items: list[EventResponse]
+    next_cursor: str | None = None

@@ -1,6 +1,6 @@
-## Seguridad
+Performance
 
-- **Authentication**: Sin autenticación en endpoints, implementar JWT/API keys
-- **CORS**: `allow_origins=["*"]` en producción, restringir dominios
-- **Input validation**: Sin sanitización de metadata JSON
-- **Rate limiting**: Sin throttling para prevenir abuse
+Indexing: Sin índices MongoDB definidos explícitamente
+Caching: Sin cache layer para analytics, agregar Redis
+Pagination: get_events_by_service sin límites, implementar cursor pagination
+Connection pooling: Cliente MongoDB sin configuración de pool

@@ -22,6 +22,10 @@ class FakeCursor:
         self._docs.sort(key=lambda d: d.get(key), reverse=reverse)
         return self
 
+    def limit(self, n: int):
+        self._docs = self._docs[:n]
+        return self
+
     def __aiter__(self):
         self._iter = iter(self._docs)
         return self
@@ -93,7 +97,8 @@ def test_create_and_list_events():
 
     r2 = client.get("/events/axi")
     assert r2.status_code == 200, r2.text
-    items = r2.json()
-    assert isinstance(items, list)
-    assert len(items) == 1
-    assert items[0]["service"] == "axi"
+    payload2 = r2.json()
+    assert isinstance(payload2, dict)
+    assert isinstance(payload2.get("items"), list)
+    assert len(payload2["items"]) == 1
+    assert payload2["items"][0]["service"] == "axi"
