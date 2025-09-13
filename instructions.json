@@ -1,6 +1,6 @@
-DevOps
+Data
 
-Multi-stage builds: Dockerfile monolítico, optimizar layers
-Health probes: Sin readiness/liveness probes para K8s
-Secrets: Hardcoded configs, usar secret management
-Monitoring: Sin alerting setup
+Schema evolution: Sin versionado de documentos MongoDB
+Backup strategy: Sin retention policies definidas
+BigQuery sync: Mencionado pero no implementado
+Data validation: Sin validación de duplicados por timestamp+service+user
