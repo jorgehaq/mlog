@@ -1,6 +1,6 @@
-Observabilidad
+DevOps
 
-Logging: Logger básico, sin structured logging con correlation IDs
-Metrics: Sin métricas de performance (latency, throughput)
-Health checks: Health endpoint superficial, sin validación MongoDB real
-Tracing: Sin distributed tracing para debugging
+Multi-stage builds: Dockerfile monolítico, optimizar layers
+Health probes: Sin readiness/liveness probes para K8s
+Secrets: Hardcoded configs, usar secret management
+Monitoring: Sin alerting setup
