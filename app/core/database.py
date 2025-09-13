@@ -11,6 +11,7 @@ def _build_client() -> motor.motor_asyncio.AsyncIOMotorClient:
         settings.MONGO_URI,
         minPoolSize=settings.DB_MIN_POOL_SIZE,
         maxPoolSize=settings.DB_MAX_POOL_SIZE,
+        serverSelectionTimeoutMS=5000,
     )
 
 
