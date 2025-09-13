@@ -82,3 +82,9 @@ gcloud run deploy mlog-api \
 ---
 
 ML0G es un microservicio de observabilidad y análisis reutilizable para ecosistemas multi-servicio.
+
+## 🛠️ DevOps
+- Docker multi-stage y usuario no-root en `Dockerfile`.
+- Kubernetes manifests de ejemplo con probes en `k8s/deployment.yaml`.
+- Secrets mediante env vars y soporte `*_FILE` para inyectar desde volúmenes/secretos.
+- Prometheus scraping: `/metrics` y ejemplo en `monitoring/prometheus.yml`.

@@ -11,6 +11,18 @@ else:
     load_dotenv()
 
 
+def _get_env_or_file(key: str, default: str | None = None) -> str | None:
+    file_key = f"{key}_FILE"
+    file_path = os.getenv(file_key)
+    if file_path:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+    return os.getenv(key, default)
+
+
 class Settings:
     # App
     APP_NAME: str = os.getenv("APP_NAME", "mlog")
@@ -22,13 +34,13 @@ class Settings:
     )
 
     # Database
-    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    MONGO_URI: str = _get_env_or_file("MONGO_URI", "mongodb://localhost:27017") or "mongodb://localhost:27017"
     DB_MIN_POOL_SIZE: int = int(os.getenv("DB_MIN_POOL_SIZE", 0))
     DB_MAX_POOL_SIZE: int = int(os.getenv("DB_MAX_POOL_SIZE", 100))
 
     # Security
-    API_KEYS: str = os.getenv("API_KEYS", "")  # comma-separated keys
-    JWT_SECRET: str | None = os.getenv("JWT_SECRET")
+    API_KEYS: str = _get_env_or_file("API_KEYS", "") or ""  # comma-separated keys
+    JWT_SECRET: str | None = _get_env_or_file("JWT_SECRET")
     RATE_LIMIT_PER_MIN: int = int(os.getenv("RATE_LIMIT_PER_MIN", 60))
     ENV: str = os.getenv("ENV", "local")
     REDIS_URL: str | None = os.getenv("REDIS_URL")
