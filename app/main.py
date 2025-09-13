@@ -4,6 +4,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.database import connect_db, close_db
+from app.core.cache import close_redis
 from app.core.errors import register_exception_handlers
 from app.middleware.ratelimit import RateLimitMiddleware
 from app.middleware.correlation import CorrelationIdMiddleware
@@ -52,6 +53,7 @@ app.include_router(health.router, prefix="/health", tags=["Health"])
 @app.on_event("shutdown")
 async def shutdown() -> None:
     await close_db()
+    await close_redis()
 
 # Prometheus metrics endpoint
 metrics_app = make_asgi_app()
