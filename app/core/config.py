@@ -45,6 +45,9 @@ class Settings:
     ENV: str = os.getenv("ENV", "local")
     REDIS_URL: str | None = os.getenv("REDIS_URL")
     ANALYTICS_CACHE_TTL: int = int(os.getenv("ANALYTICS_CACHE_TTL", 30))
+    # Data
+    EVENT_SCHEMA_VERSION: int = int(os.getenv("EVENT_SCHEMA_VERSION", 1))
+    RETENTION_DAYS: int = int(os.getenv("RETENTION_DAYS", 0))
 
 
 settings = Settings()
