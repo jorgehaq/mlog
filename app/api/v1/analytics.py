@@ -4,6 +4,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from app.api.deps import get_db
 from app.core.auth import require_auth
+from app.core.cache import get_redis
+from app.core.config import settings
+import json
 
 
 router = APIRouter()
@@ -14,6 +17,14 @@ async def summary(
     service: Optional[str] = Query(default=None),
     db=Depends(get_db),
 ):
+    # Cache
+    cache_key = f"analytics:summary:{service or '*'}"
+    r = await get_redis()
+    if r is not None:
+        cached = await r.get(cache_key)
+        if cached:
+            return json.loads(cached)
+
     match = {}
     if service:
         match["service"] = service
@@ -26,7 +37,10 @@ async def summary(
     async for row in db.audit_logs.aggregate(pipeline):
         by_action[str(row.get("_id"))] = int(row.get("count", 0))
     total = sum(by_action.values())
-    return {"by_action": by_action, "total": total}
+    result = {"by_action": by_action, "total": total}
+    if r is not None:
+        await r.setex(cache_key, settings.ANALYTICS_CACHE_TTL, json.dumps(result))
+    return result
 
 
 @router.get("/timeline", dependencies=[Depends(require_auth)])
@@ -36,6 +50,13 @@ async def timeline(
     to_ts: Optional[datetime] = Query(default=None),
     db=Depends(get_db),
 ):
+    cache_key = f"analytics:timeline:{service or '*'}:{from_ts or ''}:{to_ts or ''}"
+    r = await get_redis()
+    if r is not None:
+        cached = await r.get(cache_key)
+        if cached:
+            return json.loads(cached)
+
     match = {}
     if service:
         match["service"] = service
@@ -65,4 +86,7 @@ async def timeline(
     async for row in db.audit_logs.aggregate(pipeline):
         ts = row.get("_id")
         points.append({"ts": ts, "count": int(row.get("count", 0))})
-    return {"points": points}
+    result = {"points": points}
+    if r is not None:
+        await r.setex(cache_key, settings.ANALYTICS_CACHE_TTL, json.dumps(result, default=str))
+    return result

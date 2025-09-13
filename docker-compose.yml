@@ -7,8 +7,10 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/mlog
       - ENV=dev
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       - mongo
+      - redis
   frontend:
     image: nginx:alpine
     ports:
@@ -23,5 +25,9 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 volumes:
   mongo-data:

@@ -25,6 +25,14 @@ async def connect_db():
     global DB_CLIENT
     if DB_CLIENT is None:
         DB_CLIENT = _build_client()
+        # Ensure indexes
+        db = DB_CLIENT["mlog"]
+        try:
+            await db.audit_logs.create_index([("service", 1), ("timestamp", -1)], name="svc_ts")
+            await db.audit_logs.create_index([("action", 1)], name="action")
+        except Exception:
+            # Index creation failure should not prevent app from starting in dev
+            pass
 
 
 async def close_db():
