@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "docker-compose.yml",
+      "content": "version: '3.9'\nservices:\n  mlog-api:\n    build: .\n    ports:\n      - \"8000:8000\"\n    environment:\n      - MONGO_URI=mongodb://mongo:27017/mlog\n      - ENV=dev\n    depends_on:\n      - mongo\n  mongo:\n    image: mongo:6\n    ports:\n      - \"27017:27017\"\n    volumes:\n      - mongo-data:/data/db\nvolumes:\n  mongo-data:"
+    },
+    {
+      "path": "app/main.py",
+      "content": "from fastapi import FastAPI\nfrom app.api.v1 import events, analytics, health\nfrom app.core.database import connect_db\n\napp = FastAPI()\n\n@app.on_event(\"startup\")\nasync def startup():\n    await connect_db()\n\napp.include_router(events.router, prefix=\"/events\", tags=[\"Events\"])\napp.include_router(analytics.router, prefix=\"/analytics\", tags=[\"Analytics\"])\napp.include_router(health.router, prefix=\"/health\", tags=[\"Health\"])\n"
+    },
+    {
+      "path": "app/schemas/events.py",
+      "content": "from pydantic import BaseModel\nfrom typing import Any, Dict\nfrom datetime import datetime\n\nclass EventCreate(BaseModel):\n    timestamp: datetime\n    service: str\n    user_id: str\n    action: str\n    metadata: Dict[str, Any]\n\nclass EventResponse(EventCreate):\n    id: str"
+    },
+    {
+      "path": "app/services/event_service.py",
+      "content": "from motor.motor_asyncio import AsyncIOMotorDatabase\nfrom app.schemas.events import EventCreate\n\nasync def log_event(db: AsyncIOMotorDatabase, event: EventCreate):\n    event_doc = event.dict()\n    result = await db.audit_logs.insert_one(event_doc)\n    return str(result.inserted_id)"
+    },
+    {
+      "path": "app/api/v1/events.py",
+      "content": "from fastapi import APIRouter, Depends\nfrom app.schemas.events import EventCreate, EventResponse\nfrom app.services.event_service import log_event\nfrom app.api.deps import get_db\n\nrouter = APIRouter()\n\n@router.post(\"/\", response_model=EventResponse)\nasync def create_event(event: EventCreate, db = Depends(get_db)):\n    event_id = await log_event(db, event)\n    return EventResponse(id=event_id, **event.dict())"
+    },
+    {
+      "path": "app/api/deps.py",
+      "content": "from app.core.database import get_database\n\ndef get_db():\n    return get_database()"
+    },
+    {
+      "path": "app/core/database.py",
+      "content": "import motor.motor_asyncio\nfrom os import getenv\n\nDB_CLIENT = None\n\ndef get_database():\n    return DB_CLIENT[\"mlog\"]\n\nasync def connect_db():\n    global DB_CLIENT\n    MONGO_URI = getenv(\"MONGO_URI\", \"mongodb://localhost:27017\")\n    DB_CLIENT = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)"
+    },
+    {
+      "path": "frontend/src/services/api.ts",
+      "content": "import axios from 'axios'\n\nexport const api = axios.create({\n  baseURL: 'http://localhost:8000',\n})"
+    },
+    {
+      "path": "frontend/src/services/eventService.ts",
+      "content": "import { api } from './api'\n\nexport const sendEvent = async (event) => {\n  const response = await api.post('/events', event)\n  return response.data\n}"
+    }
+  ]
+}
