@@ -26,5 +26,11 @@ class Settings:
     DB_MIN_POOL_SIZE: int = int(os.getenv("DB_MIN_POOL_SIZE", 0))
     DB_MAX_POOL_SIZE: int = int(os.getenv("DB_MAX_POOL_SIZE", 100))
 
+    # Security
+    API_KEYS: str = os.getenv("API_KEYS", "")  # comma-separated keys
+    JWT_SECRET: str | None = os.getenv("JWT_SECRET")
+    RATE_LIMIT_PER_MIN: int = int(os.getenv("RATE_LIMIT_PER_MIN", 60))
+    ENV: str = os.getenv("ENV", "local")
+
 
 settings = Settings()

@@ -5,6 +5,7 @@ from loguru import logger
 from app.core.config import settings
 from app.core.database import connect_db, close_db
 from app.core.errors import register_exception_handlers
+from app.middleware.ratelimit import RateLimitMiddleware
 from app.api.v1 import events, analytics, health
 
 
@@ -14,11 +15,12 @@ app = FastAPI(title=settings.APP_NAME)
 origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins or ["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.on_event("startup")

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.core.config import settings
 from app.api import deps
 
 
@@ -70,6 +71,8 @@ def override_get_db():
 
 
 def test_create_and_list_events():
+    # Ensure auth disabled for this test
+    settings.API_KEYS = ""
     app.dependency_overrides[deps.get_db] = override_get_db
     client = TestClient(app)
 
