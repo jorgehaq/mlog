@@ -3,12 +3,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from app.api.deps import get_db
+from app.core.auth import require_auth
 
 
 router = APIRouter()
 
 
-@router.get("/summary")
+@router.get("/summary", dependencies=[Depends(require_auth)])
 async def summary(
     service: Optional[str] = Query(default=None),
     db=Depends(get_db),
@@ -28,7 +29,7 @@ async def summary(
     return {"by_action": by_action, "total": total}
 
 
-@router.get("/timeline")
+@router.get("/timeline", dependencies=[Depends(require_auth)])
 async def timeline(
     service: Optional[str] = Query(default=None),
     from_ts: Optional[datetime] = Query(default=None),

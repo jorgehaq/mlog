@@ -18,6 +18,20 @@ class EventCreate(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v.astimezone(timezone.utc)
 
+    @field_validator("metadata")
+    @classmethod
+    def validate_metadata(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def _check(d: Dict[str, Any], path: str = ""):
+            if len(d) > 1000:
+                raise ValueError("metadata too large")
+            for k, val in d.items():
+                if k.startswith("$") or "." in k:
+                    raise ValueError("invalid metadata key")
+                if isinstance(val, dict):
+                    _check(val, path + "." + k if path else k)
+        _check(v)
+        return v
+
 
 class EventResponse(EventCreate):
     id: str
