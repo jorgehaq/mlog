@@ -1,12 +1,20 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.schemas.events import EventCreate, EventResponse
 from typing import List, Optional, Tuple
+from pymongo.errors import DuplicateKeyError
+from app.core.config import settings
 from bson import ObjectId
 
 
 async def log_event(db: "AsyncIOMotorDatabase", event: EventCreate) -> str:
     event_doc = event.model_dump()
-    result = await db.audit_logs.insert_one(event_doc)
+    if not event_doc.get("schema_version"):
+        event_doc["schema_version"] = settings.EVENT_SCHEMA_VERSION
+    try:
+        result = await db.audit_logs.insert_one(event_doc)
+    except DuplicateKeyError:
+        # Propagar para que el endpoint responda 409
+        raise
     return str(result.inserted_id)
 
 

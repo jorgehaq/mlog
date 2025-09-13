@@ -9,6 +9,7 @@ class EventCreate(BaseModel):
     user_id: str = Field(..., min_length=1, max_length=64)
     action: str = Field(..., min_length=1, max_length=64)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    schema_version: int | None = None
 
     @field_validator("timestamp")
     @classmethod
