@@ -1,22 +1,6 @@
-{
-  "testing": {
-    "backend": {
-      "language": "Python",
-      "framework": "pytest",
-      "libraries": ["httpx", "pytest-asyncio", "mongomock"],
-      "test_files_pattern": "tests/test_*.py",
-      "structure": "Colocar todos los tests dentro de la carpeta 'tests/' en la raíz del backend",
-      "example_test": "test_events.py",
-      "command": "pytest tests/"
-    },
-    "frontend": {
-      "language": "TypeScript",
-      "framework": "Vitest",
-      "libraries": ["@testing-library/react", "@testing-library/jest-dom", "vitest"],
-      "test_files_pattern": "src/**/*.spec.tsx",
-      "structure": "Colocar los tests al lado de los componentes o en una subcarpeta __tests__",
-      "example_test": "TimelineChart.spec.tsx",
-      "command": "npx vitest"
-    }
-  }
-}
+## Arquitectura
+
+- **Separación de dependencias**: Settings duplicado (`app/settings.py` vs `app/core/config.py`), usar uno solo
+- **Singleton database**: DB_CLIENT global en `database.py`, implementar pool de conexiones
+- **Error handling**: Sin manejo de excepciones en endpoints, agregar middleware global
+- **Validation**: Schemas básicos, falta validación de business rules
