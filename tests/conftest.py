@@ -14,4 +14,5 @@ def _disable_auth_defaults():
     # Por defecto, deshabilitar auth en tests, salvo que el test lo configure.
     from app.core.config import settings
     settings.API_KEYS = ""
+    settings.JWT_SECRET = None
     yield

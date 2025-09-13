@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Any, Dict
 from datetime import datetime, timezone
 
 
 class EventCreate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     timestamp: datetime
     service: str = Field(..., pattern=r"^[a-z0-9_-]{2,32}$")
     user_id: str = Field(..., min_length=1, max_length=64)
@@ -39,5 +40,6 @@ class EventResponse(EventCreate):
 
 
 class EventListResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     items: list[EventResponse]
     next_cursor: str | None = None

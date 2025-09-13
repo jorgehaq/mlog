@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from app.api.deps import get_db
 from app.core.auth import require_auth
 from app.core.cache import get_redis
@@ -33,11 +33,14 @@ async def summary(
         {"$group": {"_id": "$action", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
     ]
-    by_action = {}
-    async for row in db.audit_logs.aggregate(pipeline):
-        by_action[str(row.get("_id"))] = int(row.get("count", 0))
-    total = sum(by_action.values())
-    result = {"by_action": by_action, "total": total}
+    try:
+        by_action = {}
+        async for row in db.audit_logs.aggregate(pipeline):
+            by_action[str(row.get("_id"))] = int(row.get("count", 0))
+        total = sum(by_action.values())
+        result = {"by_action": by_action, "total": total}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail="analytics_unavailable") from e
     if r is not None:
         await r.setex(cache_key, settings.ANALYTICS_CACHE_TTL, json.dumps(result))
     return result
@@ -82,11 +85,14 @@ async def timeline(
         },
         {"$sort": {"_id": 1}},
     ]
-    points = []
-    async for row in db.audit_logs.aggregate(pipeline):
-        ts = row.get("_id")
-        points.append({"ts": ts, "count": int(row.get("count", 0))})
-    result = {"points": points}
+    try:
+        points = []
+        async for row in db.audit_logs.aggregate(pipeline):
+            ts = row.get("_id")
+            points.append({"ts": ts, "count": int(row.get("count", 0))})
+        result = {"points": points}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail="analytics_unavailable") from e
     if r is not None:
         await r.setex(cache_key, settings.ANALYTICS_CACHE_TTL, json.dumps(result, default=str))
     return result
