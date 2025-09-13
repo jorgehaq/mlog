@@ -72,12 +72,14 @@ gcloud run deploy mlog-api \
 ```
 
 ## 🔁 Sync MongoDB → BigQuery
-- Crea una Cloud Function que exporte datos periódicamente
-- Usa el SDK de Mongo + BigQuery para mover datos
+- Script de export: `python scripts/bq_export.py --service <svc> --from <ISO> --to <ISO> --out out.ndjson`
+- Sube `out.ndjson` a GCS y carga a BigQuery (auto-detect schema o esquema predefinido)
 
 ## ✅ Recomendaciones
 - Usa Secret Manager para MONGO_URI en producción
 - Usa TanStack Query y Cache en frontend para eficiencia
+- Define retención con `RETENTION_DAYS` (TTL index en Mongo por `timestamp`)
+- Usa `EVENT_SCHEMA_VERSION` para versionar documentos y planificar migraciones
 
 ---
 
