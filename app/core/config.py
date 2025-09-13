@@ -31,6 +31,8 @@ class Settings:
     JWT_SECRET: str | None = os.getenv("JWT_SECRET")
     RATE_LIMIT_PER_MIN: int = int(os.getenv("RATE_LIMIT_PER_MIN", 60))
     ENV: str = os.getenv("ENV", "local")
+    REDIS_URL: str | None = os.getenv("REDIS_URL")
+    ANALYTICS_CACHE_TTL: int = int(os.getenv("ANALYTICS_CACHE_TTL", 30))
 
 
 settings = Settings()
