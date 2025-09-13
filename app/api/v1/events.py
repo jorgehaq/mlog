@@ -3,6 +3,8 @@ from app.schemas.events import EventCreate, EventResponse
 from app.services.event_service import log_event, get_events_by_service
 from app.api.deps import get_db
 from app.core.auth import require_auth
+from pymongo.errors import DuplicateKeyError
+from fastapi import HTTPException
 
 
 router = APIRouter()
@@ -10,7 +12,10 @@ router = APIRouter()
 
 @router.post("/", response_model=EventResponse, dependencies=[Depends(require_auth)])
 async def create_event(event: EventCreate, db = Depends(get_db)):
-    event_id = await log_event(db, event)
+    try:
+        event_id = await log_event(db, event)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail="duplicate_event")
     return EventResponse(id=event_id, **event.model_dump())
 
 
