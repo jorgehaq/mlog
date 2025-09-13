@@ -17,3 +17,19 @@ async def health():
     except Exception:
         mongo = False
     return {"status": "ok" if mongo else "degraded", "mongo": mongo}
+
+
+@router.get("/live")
+async def liveness():
+    return {"status": "alive"}
+
+
+@router.get("/ready")
+async def readiness():
+    try:
+        await connect_db()
+        db = get_database()
+        await db.client.admin.command("ping")
+        return {"status": "ready"}
+    except Exception:
+        return {"status": "not_ready"}
