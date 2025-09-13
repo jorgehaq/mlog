@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from app.settings import get_settings
-from app.api.v1.router import router as api_router
+from app.core.database import connect_db
+from app.api.v1 import events, analytics, health
 
 
 settings = get_settings()
@@ -21,14 +22,17 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-async def on_startup() -> None:
+async def startup() -> None:
     logger.remove()
     logger.add(lambda msg: print(msg, end=""))
     logger.info("Starting app: {} (env={})", settings.app_name, settings.app_env)
+    await connect_db()
 
 
 @app.get("/")
 async def root():
     return {"app": settings.app_name, "message": "¡Bienvenido a mlog!"}
 
-app.include_router(api_router, prefix="")
+app.include_router(events.router, prefix="/events", tags=["Events"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+app.include_router(health.router, prefix="/health", tags=["Health"])
