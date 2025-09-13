@@ -5,6 +5,7 @@ from app.api.deps import get_db
 from app.core.auth import require_auth
 from pymongo.errors import DuplicateKeyError
 from fastapi import HTTPException
+from app.metrics import events_created_total
 
 
 router = APIRouter()
@@ -16,6 +17,7 @@ async def create_event(event: EventCreate, db = Depends(get_db)):
         event_id = await log_event(db, event)
     except DuplicateKeyError:
         raise HTTPException(status_code=409, detail="duplicate_event")
+    events_created_total.labels(service=event.service, action=event.action).inc()
     return EventResponse(id=event_id, **event.model_dump())
 
 
