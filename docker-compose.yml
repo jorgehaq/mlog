@@ -9,6 +9,14 @@ services:
       - ENV=dev
     depends_on:
       - mongo
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - mlog-api
   mongo:
     image: mongo:6
     ports:
@@ -17,4 +25,3 @@ services:
       - mongo-data:/data/db
 volumes:
   mongo-data:
-
