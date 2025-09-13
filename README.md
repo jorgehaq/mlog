@@ -33,6 +33,17 @@ npm run dev
 - GET `/analytics/summary`
 - GET `/analytics/timeline`
 
+### Autenticación
+- API Keys: enviar `X-API-Key: <key>` si `API_KEYS` está configurado
+- JWT (opcional): enviar `Authorization: Bearer <token>` si `JWT_SECRET` está configurado
+- Endpoints protegidos: `/events/*`, `/analytics/*`
+
+### CORS
+- Configura dominios permitidos en `CORS_ORIGINS`. Evita `*` en producción.
+
+### Rate limiting
+- Límite por IP: `RATE_LIMIT_PER_MIN` (por defecto 60/min). Respuesta 429 al excederlo.
+
 ## 🧪 Tests
 ```bash
 pytest tests/
