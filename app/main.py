@@ -6,6 +6,11 @@ from app.core.config import settings
 from app.core.database import connect_db, close_db
 from app.core.errors import register_exception_handlers
 from app.middleware.ratelimit import RateLimitMiddleware
+from app.middleware.correlation import CorrelationIdMiddleware
+from app.middleware.metrics import MetricsMiddleware
+from prometheus_client import make_asgi_app
+from fastapi import APIRouter
+from app.core.observability import init_tracing
 from app.api.v1 import events, analytics, health
 
 
@@ -20,6 +25,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(CorrelationIdMiddleware)
+app.add_middleware(MetricsMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
 
@@ -30,6 +37,7 @@ async def startup() -> None:
     logger.info("Starting app: {}", settings.APP_NAME)
     await connect_db()
     register_exception_handlers(app)
+    init_tracing(app)
 
 
 @app.get("/")
@@ -44,3 +52,9 @@ app.include_router(health.router, prefix="/health", tags=["Health"])
 @app.on_event("shutdown")
 async def shutdown() -> None:
     await close_db()
+
+# Prometheus metrics endpoint
+metrics_app = make_asgi_app()
+router_metrics = APIRouter()
+router_metrics.add_route("/metrics", endpoint=metrics_app, include_in_schema=False)
+app.include_router(router_metrics)
