@@ -1,6 +1,47 @@
-Data
+Revisión del código MLOG:
 
-Schema evolution: Sin versionado de documentos MongoDB
-Backup strategy: Sin retention policies definidas
-BigQuery sync: Mencionado pero no implementado
-Data validation: Sin validación de duplicados por timestamp+service+user
+**Problemas críticos:**
+
+1. **app/settings.py** - Clase duplicada. Ya tienes `app/core/config.py` con Settings. Eliminar uno.
+
+2. **Imports circulares** - `app/api/deps.py` importa database que puede importar config que puede crear ciclos.
+
+3. **Error handling inconsistente** - Algunos endpoints no manejan excepciones específicas de MongoDB.
+
+4. **Tests incompletos** - Faltan tests para middleware, auth con JWT, cache Redis.
+
+5. **Frontend básico** - Solo 2 endpoints, sin formularios para crear eventos ni dashboards reales.
+
+**Mejoras técnicas:**
+
+1. **Pydantic V2** - Usar `ConfigDict` en lugar de `Config` en schemas.
+
+2. **Async consistency** - `app/core/cache.py` usa async pero algunos calls pueden ser sync.
+
+3. **Type hints** - Faltan en varios métodos de services y middleware.
+
+4. **Validation** - `metadata` permite cualquier estructura, riesgo de NoSQL injection.
+
+5. **Monitoring** - Métricas básicas, faltan business metrics específicos.
+
+**Observaciones arquitectura:**
+
+1. **Repository pattern** - Mencionado pero no implementado completamente.
+
+2. **Service layer** - Muy delgado, lógica en endpoints.
+
+3. **Configuration** - Mezclado entre archivos env y Settings class.
+
+4. **Error propagation** - Algunos errores se tragan silenciosamente.
+
+5. **Resource cleanup** - Redis/MongoDB connections no siempre se cierran apropiadamente.
+
+**Para portfolio:**
+
+- Agregar más tests de integración
+- Implementar dashboard real con Charts.js
+- Documentar API con ejemplos curl
+- Agregar metrics específicos de negocio
+- Implementar circuit breaker real
+
+¿Quieres que implemente alguna de estas mejoras específicas?
