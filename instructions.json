@@ -1,6 +1,6 @@
-## Arquitectura
+## Seguridad
 
-- **Separación de dependencias**: Settings duplicado (`app/settings.py` vs `app/core/config.py`), usar uno solo
-- **Singleton database**: DB_CLIENT global en `database.py`, implementar pool de conexiones
-- **Error handling**: Sin manejo de excepciones en endpoints, agregar middleware global
-- **Validation**: Schemas básicos, falta validación de business rules
+- **Authentication**: Sin autenticación en endpoints, implementar JWT/API keys
+- **CORS**: `allow_origins=["*"]` en producción, restringir dominios
+- **Input validation**: Sin sanitización de metadata JSON
+- **Rate limiting**: Sin throttling para prevenir abuse
