@@ -1,40 +1,66 @@
-OBSERVATION:
-Ambientes múltiples (local, desarrollo, producción) requieren separación clara de configuración para garantizar seguridad, facilidad de pruebas, y despliegue fluido. FastAPI, MongoDB y React permiten entornos bien diferenciados si se diseña la estrategia desde el principio.
-
-GUIDANCE:
-Te recomiendo una estrategia de configuración basada en **archivos `.env` con jerarquía**, usando la librería `python-dotenv` para el backend, y Vite + `.env` prefijados con `VITE_` para el frontend. Ideal para trabajar localmente y luego desplegar a GCP con mínimos cambios.
-
-PATH:
-1. **Backend (FastAPI)**:
-   - Usa `python-dotenv` para cargar `.env` según el entorno (`ENV=local|dev|prod`)
-   - Crea: `.env.local`, `.env.dev`, `.env.prod`
-   - Carga dinámicamente el archivo correspondiente en `config.py`
-
-2. **Frontend (React + Vite)**:
-   - Vite carga `.env` automáticamente si prefijado con `VITE_`
-   - Usa `.env`, `.env.development`, `.env.production`
-
-3. **Docker**:
-   - Monta `.env` desde archivo local con `env_file:` en `docker-compose`
-   - En producción usa secretos cifrados o `Secret Manager` en GCP
-
-4. **GCP**:
-   - Para `Cloud Run`, inyecta variables como `env_vars` en el deploy
-   - No subas `.env` al repo. Usa `.env.example` como referencia
-
-VISION:
-Esta estructura te permite probar localmente con MongoDB en contenedor, y luego mover todo a producción usando MongoDB Atlas + Cloud Run sin cambiar código. Reduces errores por configuración y aumentas portabilidad del sistema.
-
-WISDOM:
-Ambientes bien definidos son cimientos invisibles de un sistema robusto. Separar configuración de código, usar `.env` jerárquicos, y pensar en producción desde el inicio da claridad al desarrollo y estabilidad al despliegue.
-
-
-
 {
   "files": [
     {
-      "path": "vite.config.ts",
-      "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  server: {\n    port: 3000,\n  }\n})"
+      "path": ".env.example",
+      "content": "ENV=local\nMONGO_URI=mongodb://mongo:27017/mlog\nLOG_LEVEL=debug\nPORT=8000"
+    },
+    {
+      "path": "app/core/config.py",
+      "content": "from dotenv import load_dotenv\nimport os\nfrom pathlib import Path\n\n# Load correct .env file based on ENV variable\nENV = os.getenv(\"ENV\", \"local\")\nENV_PATH = Path(f\".env.{ENV}\")\nif ENV_PATH.exists():\n    load_dotenv(dotenv_path=ENV_PATH)\nelse:\n    load_dotenv()\n\nclass Settings:\n    MONGO_URI: str = os.getenv(\"MONGO_URI\", \"mongodb://localhost:27017\")\n    LOG_LEVEL: str = os.getenv(\"LOG_LEVEL\", \"info\")\n    PORT: int = int(os.getenv(\"PORT\", 8000))\n\nsettings = Settings()"
+    },
+    {
+      "path": "README.md",
+      "content": "# MLOG - MongoDB Event Logging & Analytics Service\n\nSistema desacoplado para registrar eventos de múltiples servicios, generar analíticas, y sincronizar con BigQuery. \n\n## 🧱 Estructura\n- Backend: FastAPI + MongoDB (Motor)\n- Frontend: React 18 + Vite + TypeScript\n- Infraestructura: Docker / GCP Cloud Run + MongoDB Atlas\n\n## 🚀 Instalación local\n\n### Backend\n```bash\ngit clone https://github.com/tuusuario/mlog-service\ncd mlog-service\ncp .env.example .env.local\n# Edita valores si deseas\n\n# Levanta servicios\ndocker-compose up --build\n```\n\n### Frontend\n```bash\ncd frontend\nnpm install\ncp .env.example .env.development\nnpm run dev\n```\n\n## 🌐 API Endpoints (ejemplos)\n- POST `/events`\n- GET `/analytics/summary`\n- GET `/analytics/timeline`\n\n## 🧪 Tests\n```bash\npytest tests/\n```\n\n## ☁️ Despliegue en GCP (Cloud Run)\n\n### 1. MongoDB Atlas\n- Crea un cluster en [https://cloud.mongodb.com](https://cloud.mongodb.com)\n- Configura IP whitelist y user/password\n\n### 2. Docker Build & Push\n```bash\ndocker build -t gcr.io/tu-proyecto/mlog-api .\ndocker push gcr.io/tu-proyecto/mlog-api\n```\n\n### 3. Cloud Run Deploy\n```bash\ngcloud run deploy mlog-api \\\n  --image gcr.io/tu-proyecto/mlog-api \\\n  --platform managed \\\n  --region us-central1 \\\n  --allow-unauthenticated \\\n  --set-env-vars ENV=prod,MONGO_URI=<uri_atlas>\n```\n\n## 🔁 Sync MongoDB → BigQuery\n- Crea una Cloud Function que exporte datos periódicamente\n- Usa el SDK de Mongo + BigQuery para mover datos\n\n## ✅ Recomendaciones\n- Usa Secret Manager para MONGO_URI en producción\n- Usa TanStack Query y Cache en frontend para eficiencia\n\n---\n\n_MLOG fue creado como un microservicio de observabilidad y análisis reutilizable para ecosistemas multi-servicio._"
+    }
+  ]
+}
+
+
+{
+  "project": "MLOG - MongoDB Event Logging & Analytics Service",
+  "description": "Microservicio desacoplado para registrar eventos de múltiples servicios, generar analíticas, y sincronizar con BigQuery.",
+  "structure": {
+    "backend": "FastAPI + MongoDB",
+    "frontend": "React 18 + Vite + Tailwind + TypeScript",
+    "env_strategy": "python-dotenv + .env hierarchy",
+    "deployment": "Docker local / GCP Cloud Run + MongoDB Atlas"
+  },
+  "files": [
+    {
+      "path": "docker-compose.yml",
+      "content": "version: '3.9'\nservices:\n  mlog-api:\n    build: .\n    ports:\n      - \"8000:8000\"\n    environment:\n      - MONGO_URI=mongodb://mongo:27017/mlog\n      - ENV=dev\n    depends_on:\n      - mongo\n  mongo:\n    image: mongo:6\n    ports:\n      - \"27017:27017\"\n    volumes:\n      - mongo-data:/data/db\nvolumes:\n  mongo-data:"
+    },
+    {
+      "path": "app/main.py",
+      "content": "from fastapi import FastAPI\nfrom app.api.v1 import events, analytics, health\nfrom app.core.database import connect_db\n\napp = FastAPI()\n\n@app.on_event(\"startup\")\nasync def startup():\n    await connect_db()\n\napp.include_router(events.router, prefix=\"/events\", tags=[\"Events\"])\napp.include_router(analytics.router, prefix=\"/analytics\", tags=[\"Analytics\"])\napp.include_router(health.router, prefix=\"/health\", tags=[\"Health\"])"
+    },
+    {
+      "path": "app/schemas/events.py",
+      "content": "from pydantic import BaseModel\nfrom typing import Any, Dict\nfrom datetime import datetime\n\nclass EventCreate(BaseModel):\n    timestamp: datetime\n    service: str\n    user_id: str\n    action: str\n    metadata: Dict[str, Any]\n\nclass EventResponse(EventCreate):\n    id: str"
+    },
+    {
+      "path": "app/services/event_service.py",
+      "content": "from motor.motor_asyncio import AsyncIOMotorDatabase\nfrom app.schemas.events import EventCreate\n\nasync def log_event(db: AsyncIOMotorDatabase, event: EventCreate):\n    event_doc = event.dict()\n    result = await db.audit_logs.insert_one(event_doc)\n    return str(result.inserted_id)"
+    },
+    {
+      "path": "app/api/v1/events.py",
+      "content": "from fastapi import APIRouter, Depends\nfrom app.schemas.events import EventCreate, EventResponse\nfrom app.services.event_service import log_event\nfrom app.api.deps import get_db\n\nrouter = APIRouter()\n\n@router.post(\"/\", response_model=EventResponse)\nasync def create_event(event: EventCreate, db = Depends(get_db)):\n    event_id = await log_event(db, event)\n    return EventResponse(id=event_id, **event.dict())"
+    },
+    {
+      "path": "app/api/deps.py",
+      "content": "from app.core.database import get_database\n\ndef get_db():\n    return get_database()"
+    },
+    {
+      "path": "app/core/database.py",
+      "content": "import motor.motor_asyncio\nfrom os import getenv\n\nDB_CLIENT = None\n\ndef get_database():\n    return DB_CLIENT[\"mlog\"]\n\nasync def connect_db():\n    global DB_CLIENT\n    MONGO_URI = getenv(\"MONGO_URI\", \"mongodb://localhost:27017\")\n    DB_CLIENT = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)"
+    },
+    {
+      "path": "app/core/config.py",
+      "content": "from dotenv import load_dotenv\nimport os\nfrom pathlib import Path\n\nENV = os.getenv(\"ENV\", \"local\")\nENV_PATH = Path(f\".env.{ENV}\")\nif ENV_PATH.exists():\n    load_dotenv(dotenv_path=ENV_PATH)\nelse:\n    load_dotenv()\n\nclass Settings:\n    MONGO_URI: str = os.getenv(\"MONGO_URI\", \"mongodb://localhost:27017\")\n    LOG_LEVEL: str = os.getenv(\"LOG_LEVEL\", \"info\")\n    PORT: int = int(os.getenv(\"PORT\", 8000))\n\nsettings = Settings()"
+    },
+    {
+      "path": ".env.example",
+      "content": "ENV=local\nMONGO_URI=mongodb://mongo:27017/mlog\nLOG_LEVEL=debug\nPORT=8000"
     },
     {
       "path": "frontend/src/App.tsx",
@@ -45,12 +71,20 @@ Ambientes bien definidos son cimientos invisibles de un sistema robusto. Separar
       "content": "import React from 'react'\nimport { Line } from 'react-chartjs-2'\nimport {\n  Chart as ChartJS,\n  LineElement,\n  CategoryScale,\n  LinearScale,\n  PointElement,\n  Title,\n  Tooltip,\n  Legend,\n} from 'chart.js'\n\nChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend)\n\nconst data = {\n  labels: ['Jan', 'Feb', 'Mar', 'Apr'],\n  datasets: [\n    {\n      label: 'Events',\n      data: [10, 20, 15, 30],\n      borderColor: 'rgb(75, 192, 192)',\n      tension: 0.3,\n    },\n  ],\n}\n\nconst options = {\n  responsive: true,\n  plugins: {\n    legend: {\n      display: true,\n    },\n  },\n}\n\nconst TimelineChart = () => <Line data={data} options={options} />\n\nexport default TimelineChart"
     },
     {
-      "path": "frontend/tailwind.config.ts",
-      "content": "import type { Config } from 'tailwindcss'\n\nconst config: Config = {\n  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}\nexport default config"
+      "path": "frontend/src/services/api.ts",
+      "content": "import axios from 'axios'\n\nexport const api = axios.create({\n  baseURL: 'http://localhost:8000',\n})"
+    },
+    {
+      "path": "frontend/src/services/eventService.ts",
+      "content": "import { api } from './api'\n\nexport const sendEvent = async (event) => {\n  const response = await api.post('/events', event)\n  return response.data\n}"
     },
     {
       "path": "frontend/src/index.css",
       "content": "@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+    },
+    {
+      "path": "frontend/tailwind.config.ts",
+      "content": "import type { Config } from 'tailwindcss'\n\nconst config: Config = {\n  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}\nexport default config"
     },
     {
       "path": "frontend/src/main.tsx",
@@ -63,6 +97,10 @@ Ambientes bien definidos son cimientos invisibles de un sistema robusto. Separar
     {
       "path": "tests/test_events.py",
       "content": "from fastapi.testclient import TestClient\nfrom app.main import app\nfrom datetime import datetime\n\nclient = TestClient(app)\n\ndef test_post_event():\n    response = client.post(\"/events/\", json={\n        \"timestamp\": datetime.utcnow().isoformat(),\n        \"service\": \"test\",\n        \"user_id\": \"u123\",\n        \"action\": \"login\",\n        \"metadata\": {\"ip\": \"127.0.0.1\"}\n    })\n    assert response.status_code == 200\n    assert \"id\" in response.json()"
+    },
+    {
+      "path": "README.md",
+      "content": "# MLOG - MongoDB Event Logging & Analytics Service\n\nSistema desacoplado para registrar eventos de múltiples servicios, generar analíticas, y sincronizar con BigQuery.\n\n## 🧱 Estructura\n- Backend: FastAPI + MongoDB (Motor)\n- Frontend: React 18 + Vite + TypeScript\n- Infraestructura: Docker / GCP Cloud Run + MongoDB Atlas\n\n## 🚀 Instalación local\n\n### Backend\n```bash\ngit clone https://github.com/tuusuario/mlog-service\ncd mlog-service\ncp .env.example .env.local\n\n# Levanta servicios\ndocker-compose up --build\n```\n\n### Frontend\n```bash\ncd frontend\nnpm install\ncp .env.example .env.development\nnpm run dev\n```\n\n## 🌐 API Endpoints\n- POST `/events`\n- GET `/analytics/summary`\n- GET `/analytics/timeline`\n\n## 🧪 Tests\n```bash\npytest tests/\n```\n\n## ☁️ Despliegue en GCP (Cloud Run)\n\n### 1. MongoDB Atlas\n- Crea un cluster en [https://cloud.mongodb.com](https://cloud.mongodb.com)\n- Configura IP whitelist y user/password\n\n### 2. Docker Build & Push\n```bash\ndocker build -t gcr.io/tu-proyecto/mlog-api .\ndocker push gcr.io/tu-proyecto/mlog-api\n```\n\n### 3. Cloud Run Deploy\n```bash\ngcloud run deploy mlog-api \\\n  --image gcr.io/tu-proyecto/mlog-api \\\n  --platform managed \\\n  --region us-central1 \\\n  --allow-unauthenticated \\\n  --set-env-vars ENV=prod,MONGO_URI=<uri_atlas>\n```\n\n## 🔁 Sync MongoDB → BigQuery\n- Crea una Cloud Function que exporte datos periódicamente\n- Usa el SDK de Mongo + BigQuery para mover datos\n\n---\n\n_MLOG fue creado como microservicio de observabilidad y análisis reutilizable para ecosistemas multi-servicio._"
     }
   ]
 }
