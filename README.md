@@ -1,60 +1,73 @@
-Proyecto: mlog
+# MLOG - MongoDB Event Logging & Analytics Service
 
-Este repo incluye un backend en Python (FastAPI) y un frontend estático simple para probar la API.
+Sistema desacoplado para registrar eventos de múltiples servicios, generar analíticas, y sincronizar con BigQuery.
 
-Se empieza por el backend y luego el frontend.
+## 🧱 Estructura
+- Backend: FastAPI + MongoDB (Motor)
+- Frontend: React 18 + Vite + TypeScript
+- Infraestructura: Docker / GCP Cloud Run + MongoDB Atlas
 
-Requisitos
-- Python 3.10+
-- Opcional: Make (para usar atajos), pero puedes ejecutar comandos equivalentes en bash/PowerShell
+## 🚀 Instalación local
 
-Backend (FastAPI)
-1) Crear entorno virtual
-   - Linux/Mac: `python -m venv .venv && source .venv/bin/activate`
-   - Windows (PowerShell): `python -m venv .venv; . .venv/Scripts/Activate.ps1`
+### Backend
+```bash
+git clone https://github.com/jorgehaq/mlog
+cd mlog
+cp .env.example .env.local
+# Edita valores si deseas
 
-2) Instalar dependencias
-   - `pip install -U pip
-      && pip install -r requirements.txt`
+# Levanta servicios
+docker-compose up --build
+```
 
-3) Variables de entorno
-   - Copia `.env.example` a `.env` si deseas cambiar valores (opcional).
+### Frontend
+```bash
+cd frontend
+npm install
+cp .env.example .env.development
+npm run dev
+```
 
-4) Ejecutar el servidor
-   - `uvicorn app.main:app --reload --port 8000`
-   - Endpoints:
-     - `GET http://localhost:8000/` -> mensaje de bienvenida
-     - `GET http://localhost:8000/health` -> estado del API y MongoDB
-     - `POST http://localhost:8000/events` -> crear evento `{ service, action, payload?, timestamp? }`
-     - `GET http://localhost:8000/events/{service}` -> listar eventos por servicio
-     - `GET http://localhost:8000/analytics/summary` -> conteo por acción y total
-     - `GET http://localhost:8000/analytics/timeline` -> puntos por minuto
+## 🌐 API Endpoints (ejemplos)
+- POST `/events`
+- GET `/analytics/summary`
+- GET `/analytics/timeline`
 
-Frontend (estático)
-1) Servir el frontend de forma simple sin dependencias:
-   - `cd frontend`
-   - `python -m http.server 5173` (o el puerto que prefieras)
-   - Abre `http://localhost:5173` en tu navegador
+## 🧪 Tests
+```bash
+pytest tests/
+```
 
-2) El frontend realiza peticiones al backend en `http://localhost:8000`.
+## ☁️ Despliegue en GCP (Cloud Run)
 
-Comandos Make (opcionales)
-- `make venv`      -> crea y activa entorno virtual (en shells POSIX)
-- `make install`   -> instala dependencias
-- `make run`       -> ejecuta backend en http://localhost:8000
-- `make front`     -> sirve frontend en http://localhost:5173
+### 1. MongoDB Atlas
+- Crea un cluster en https://cloud.mongodb.com
+- Configura IP whitelist y user/password
 
-Estructura
-- `app/`           -> código del backend FastAPI
-- `frontend/`      -> HTML/JS estático de ejemplo
-- `requirements.txt` -> dependencias del backend
-- `.env.example`   -> variables de entorno de ejemplo
+### 2. Docker Build & Push
+```bash
+docker build -t gcr.io/tu-proyecto/mlog-api .
+docker push gcr.io/tu-proyecto/mlog-api
+```
 
-Git y flujo de ramas
-- Ramas: `main` (producción), `dev` (integración), `feature/<slug>`.
-- Crear features desde `dev` y abrir PR hacia `dev`.
-- Promocionar `dev` a `main` con PR cuando corresponda una release.
-- Comandos iniciales sugeridos:
-  - `git checkout -b dev` (si no existe)
-  - `git checkout -b feature/<slug>`
-  - `git push -u origin <rama>` (si ya configuraste remoto)
+### 3. Cloud Run Deploy
+```bash
+gcloud run deploy mlog-api \
+  --image gcr.io/tu-proyecto/mlog-api \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars ENV=prod,MONGO_URI=<uri_atlas>
+```
+
+## 🔁 Sync MongoDB → BigQuery
+- Crea una Cloud Function que exporte datos periódicamente
+- Usa el SDK de Mongo + BigQuery para mover datos
+
+## ✅ Recomendaciones
+- Usa Secret Manager para MONGO_URI en producción
+- Usa TanStack Query y Cache en frontend para eficiencia
+
+---
+
+ML0G es un microservicio de observabilidad y análisis reutilizable para ecosistemas multi-servicio.
