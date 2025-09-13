@@ -1,0 +1,68 @@
+OBSERVATION:
+Ambientes múltiples (local, desarrollo, producción) requieren separación clara de configuración para garantizar seguridad, facilidad de pruebas, y despliegue fluido. FastAPI, MongoDB y React permiten entornos bien diferenciados si se diseña la estrategia desde el principio.
+
+GUIDANCE:
+Te recomiendo una estrategia de configuración basada en **archivos `.env` con jerarquía**, usando la librería `python-dotenv` para el backend, y Vite + `.env` prefijados con `VITE_` para el frontend. Ideal para trabajar localmente y luego desplegar a GCP con mínimos cambios.
+
+PATH:
+1. **Backend (FastAPI)**:
+   - Usa `python-dotenv` para cargar `.env` según el entorno (`ENV=local|dev|prod`)
+   - Crea: `.env.local`, `.env.dev`, `.env.prod`
+   - Carga dinámicamente el archivo correspondiente en `config.py`
+
+2. **Frontend (React + Vite)**:
+   - Vite carga `.env` automáticamente si prefijado con `VITE_`
+   - Usa `.env`, `.env.development`, `.env.production`
+
+3. **Docker**:
+   - Monta `.env` desde archivo local con `env_file:` en `docker-compose`
+   - En producción usa secretos cifrados o `Secret Manager` en GCP
+
+4. **GCP**:
+   - Para `Cloud Run`, inyecta variables como `env_vars` en el deploy
+   - No subas `.env` al repo. Usa `.env.example` como referencia
+
+VISION:
+Esta estructura te permite probar localmente con MongoDB en contenedor, y luego mover todo a producción usando MongoDB Atlas + Cloud Run sin cambiar código. Reduces errores por configuración y aumentas portabilidad del sistema.
+
+WISDOM:
+Ambientes bien definidos son cimientos invisibles de un sistema robusto. Separar configuración de código, usar `.env` jerárquicos, y pensar en producción desde el inicio da claridad al desarrollo y estabilidad al despliegue.
+
+
+
+{
+  "files": [
+    {
+      "path": "vite.config.ts",
+      "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  server: {\n    port: 3000,\n  }\n})"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "content": "import React from 'react'\nimport TimelineChart from './components/ui/TimelineChart'\n\nfunction App() {\n  return (\n    <div className=\"p-4\">\n      <h1 className=\"text-xl font-bold mb-4\">MLOG Dashboard</h1>\n      <TimelineChart />\n    </div>\n  )\n}\n\nexport default App"
+    },
+    {
+      "path": "frontend/src/components/ui/TimelineChart.tsx",
+      "content": "import React from 'react'\nimport { Line } from 'react-chartjs-2'\nimport {\n  Chart as ChartJS,\n  LineElement,\n  CategoryScale,\n  LinearScale,\n  PointElement,\n  Title,\n  Tooltip,\n  Legend,\n} from 'chart.js'\n\nChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend)\n\nconst data = {\n  labels: ['Jan', 'Feb', 'Mar', 'Apr'],\n  datasets: [\n    {\n      label: 'Events',\n      data: [10, 20, 15, 30],\n      borderColor: 'rgb(75, 192, 192)',\n      tension: 0.3,\n    },\n  ],\n}\n\nconst options = {\n  responsive: true,\n  plugins: {\n    legend: {\n      display: true,\n    },\n  },\n}\n\nconst TimelineChart = () => <Line data={data} options={options} />\n\nexport default TimelineChart"
+    },
+    {
+      "path": "frontend/tailwind.config.ts",
+      "content": "import type { Config } from 'tailwindcss'\n\nconst config: Config = {\n  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}\nexport default config"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "content": "@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "content": "import React from 'react'\nimport ReactDOM from 'react-dom/client'\nimport App from './App'\nimport './index.css'\n\nReactDOM.createRoot(document.getElementById('root')!).render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n)"
+    },
+    {
+      "path": "frontend/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>MLOG</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>"
+    },
+    {
+      "path": "tests/test_events.py",
+      "content": "from fastapi.testclient import TestClient\nfrom app.main import app\nfrom datetime import datetime\n\nclient = TestClient(app)\n\ndef test_post_event():\n    response = client.post(\"/events/\", json={\n        \"timestamp\": datetime.utcnow().isoformat(),\n        \"service\": \"test\",\n        \"user_id\": \"u123\",\n        \"action\": \"login\",\n        \"metadata\": {\"ip\": \"127.0.0.1\"}\n    })\n    assert response.status_code == 200\n    assert \"id\" in response.json()"
+    }
+  ]
+}
