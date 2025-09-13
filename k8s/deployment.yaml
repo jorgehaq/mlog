@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlog-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mlog-api
+  template:
+    metadata:
+      labels:
+        app: mlog-api
+    spec:
+      containers:
+        - name: api
+          image: your-registry/mlog-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlog-secrets
+                  key: MONGO_URI
+            - name: API_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: mlog-secrets
+                  key: API_KEYS
+            - name: CORS_ORIGINS
+              value: "http://your-frontend.example.com"
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlog-api
+spec:
+  selector:
+    app: mlog-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+
