@@ -70,7 +70,11 @@ pytest tests/
 ```
 
 ### Con Docker/Compose
-- Levantar stack: `make compose-up`
+- Levantar stack base: `make compose-up` (builds de imágenes; sin hot-reload)
+- Levantar entorno de dev con hot-reload y bind mounts: `make compose-up-dev`
+  - Volúmenes: `mongo-data` (persistente), `redis-data` (persistente), `frontend-node_modules` (persistente)
+  - Bind mounts: `./:/app` (backend), `./frontend:/app` (frontend)
+  - Comandos: backend `uvicorn --reload`, frontend `vite dev`
 - Tests backend en contenedor: `make compose-test-backend`
 - Tests frontend en contenedor: `make compose-test-frontend`
 - E2E Playwright en contenedor: `make compose-e2e`

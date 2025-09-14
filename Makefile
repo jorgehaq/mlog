@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: venv install run front front-dev front-build front-preview test-backend test-frontend e2e compose-up compose-down compose-logs compose-test-backend compose-test-frontend compose-e2e
+.PHONY: venv install run front front-dev front-build front-preview test-backend test-frontend e2e compose-up compose-up-dev compose-down compose-logs compose-test-backend compose-test-frontend compose-e2e
 
 venv:
 	python -m venv .venv; source .venv/bin/activate; python -m pip install -U pip
@@ -34,13 +34,16 @@ e2e:
 
 # --- Docker/Compose helpers ---
 compose-up:
-	docker compose up -d --build
+	docker compose -f docker-compose.yml up -d --build
+
+compose-up-dev:
+	docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
 compose-down:
-	docker compose down -v
+	docker compose -f docker-compose.yml -f docker-compose.override.yml down -v
 
 compose-logs:
-	docker compose logs -f mlog-api
+	docker compose -f docker-compose.yml -f docker-compose.override.yml logs -f mlog-api
 
 # Run backend tests inside the mlog-api service container
 compose-test-backend:
