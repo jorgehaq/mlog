@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/queryClient.ts","./src/types.ts","./src/components/Dashboard.tsx","./src/components/ErrorBoundary.tsx","./src/components/EventForm.tsx","./src/services/api.ts","./src/services/eventService.ts"],"version":"5.9.2"}

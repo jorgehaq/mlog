@@ -71,13 +71,18 @@ pytest tests/
 
 ### Con Docker/Compose
 - Levantar stack base: `make compose-up` (builds de imágenes; sin hot-reload)
-- Levantar entorno de dev con hot-reload y bind mounts: `make compose-up-dev`
+- Desarrollo con hot-reload y bind mounts: `make compose-up-dev`
   - Volúmenes: `mongo-data` (persistente), `redis-data` (persistente), `frontend-node_modules` (persistente)
   - Bind mounts: `./:/app` (backend), `./frontend:/app` (frontend)
   - Comandos: backend `uvicorn --reload`, frontend `vite dev`
+- Pre‑release staging (todo en Docker, frontend servido por nginx):
+  - `make front-build` y luego `make compose-up-staging`
+  - Backend en `http://localhost:8000`, Frontend en `http://localhost:8080`
+  - E2E contra staging: `make compose-e2e-staging`
 - Tests backend en contenedor: `make compose-test-backend`
 - Tests frontend en contenedor: `make compose-test-frontend`
 - E2E Playwright en contenedor: `make compose-e2e`
+- E2E Playwright local (usa preview en :4173): `make e2e-local`
 - Parar y limpiar: `make compose-down`
 
 ## ☁️ Despliegue en GCP (Cloud Run)

@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test'
 
 test('homepage renders and navigates', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('mlog')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /mlog/ })).toBeVisible()
   await page.getByRole('button', { name: 'Dashboard' }).click()
-  await expect(page.getByText('Dashboard')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
   await page.getByRole('button', { name: 'Crear evento' }).click()
-  await expect(page.getByText('Crear evento')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Crear evento' })).toBeVisible()
 })
 

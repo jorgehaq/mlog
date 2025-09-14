@@ -10,6 +10,7 @@ __pycache__/
 .env.local
 .env.dev
 .env.development
+.env.staging
 .env.test
 .env.prod
 frontend/.env.local
@@ -19,3 +20,4 @@ dist/
 build/
 .mailmap
 instructions.json
+.npm-cache/

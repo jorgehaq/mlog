@@ -4,7 +4,7 @@ import { HealthSchema, RootSchema } from './types'
 import { EventForm } from './components/EventForm'
 import { Dashboard } from './components/Dashboard'
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API = '/api'
 
 async function getJson<T>(path: string, schema: { parse: (v: unknown) => T }): Promise<T> {
   const res = await fetch(`${API}${path}`)

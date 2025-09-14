@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Line, Bar } from 'react-chartjs-2'
 import 'chart.js/auto'
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = '/api'
 
 type Summary = { by_action: Record<string, number>, total: number }
 type Point = { ts: string; count: number }
