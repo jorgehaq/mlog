@@ -7,6 +7,13 @@ __pycache__/
 *.pyd
 .DS_Store
 .env
+.env.local
+.env.dev
+.env.development
+.env.test
+.env.prod
+frontend/.env.local
+frontend/.env.development
 node_modules/
 dist/
 build/

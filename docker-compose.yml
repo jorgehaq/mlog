@@ -7,7 +7,7 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/mlog
       - ENV=dev
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6380/0
     depends_on:
       mongo:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6380"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

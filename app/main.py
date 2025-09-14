@@ -57,6 +57,4 @@ async def shutdown() -> None:
 
 # Prometheus metrics endpoint
 metrics_app = make_asgi_app()
-router_metrics = APIRouter()
-router_metrics.add_route("/metrics", endpoint=metrics_app, include_in_schema=False)
-app.include_router(router_metrics)
+app.mount("/metrics", metrics_app)

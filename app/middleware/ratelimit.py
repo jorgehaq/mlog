@@ -17,9 +17,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.hits: Dict[str, Deque[float]] = defaultdict(deque)
 
     async def dispatch(self, request: Request, call_next):
-        # Skip internal docs and static by default
+        # Skip internal docs, static, and metrics by default
         path = request.url.path
-        if path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/static"):
+        if path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/static") or path.startswith("/metrics"):
             return await call_next(request)
 
         ident = request.client.host if request.client else "anonymous"
