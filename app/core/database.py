@@ -31,7 +31,15 @@ async def connect_db():
         try:
             await db.audit_logs.create_index([("service", 1), ("timestamp", -1)], name="svc_ts")
             await db.audit_logs.create_index([("action", 1)], name="action")
-            await db.audit_logs.create_index([("service", 1), ("user_id", 1), ("timestamp", 1)], name="uniq_svc_user_ts", unique=True)
+            # En entornos productivos, forzar unicidad (evita duplicados exactos);
+            # en dev/test se omite para no romper flujos locales.
+            from app.core.config import settings as _s
+            if getattr(_s, "ENV", "local") in {"prod", "production"}:
+                await db.audit_logs.create_index(
+                    [("service", 1), ("user_id", 1), ("timestamp", 1)],
+                    name="uniq_svc_user_ts",
+                    unique=True,
+                )
             # TTL retention based on timestamp, if configured
             from app.core.config import settings
             if getattr(settings, "RETENTION_DAYS", 0) > 0:
