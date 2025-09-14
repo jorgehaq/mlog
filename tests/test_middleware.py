@@ -18,40 +18,36 @@ def test_correlation_and_metrics_and_ratelimit(monkeypatch):
             if hasattr(middleware, 'hits'):
                 middleware.hits.clear()
     
-    client = TestClient(app)
-    
+    with TestClient(app) as client:
+        # Correlation: custom header should be echoed back
+        r = client.get("/health", headers={"X-Request-ID": "abc-123"})
+        assert r.status_code in (200, 503)
+        assert r.headers.get("X-Request-ID") == "abc-123"
+
+        # Hit health a few times - should not trigger 429 with higher limit
+        for _ in range(5):
+            resp = client.get("/health")
+            assert resp.status_code in (200, 503)  # Allow for service unavailable due to circuit breaker
+
+        # Create an event and verify business metric appears
+        payload = {
+            "timestamp": datetime(2025, 1, 1, 0, 0, 0).isoformat() + "Z",
+            "service": "axi",
+            "user_id": "u1",
+            "action": "login",
+            "metadata": {},
+        }
+        re = client.post("/events/", json=payload)
+        assert re.status_code in (200, 503)  # Allow for service unavailable due to circuit breaker or DB issues
+
+        m = client.get("/metrics")
+        assert m.status_code == 200
+        text = m.text
+        assert "http_requests_total" in text
+        assert "events_created_total" in text
+
     # Restore original limit after test
-    def cleanup():
-        settings.RATE_LIMIT_PER_MIN = original_limit
-    monkeypatch.setattr(test_correlation_and_metrics_and_ratelimit, '_cleanup', cleanup, raising=False)
-    cleanup()
-
-    # Correlation: custom header should be echoed back
-    r = client.get("/health", headers={"X-Request-ID": "abc-123"})
-    assert r.status_code in (200, 503)
-    assert r.headers.get("X-Request-ID") == "abc-123"
-
-    # Hit health a few times - should not trigger 429 with higher limit
-    for _ in range(5):
-        resp = client.get("/health")
-        assert resp.status_code in (200, 503)  # Allow for service unavailable due to circuit breaker
-
-    # Create an event and verify business metric appears
-    payload = {
-        "timestamp": datetime(2025, 1, 1, 0, 0, 0).isoformat() + "Z",
-        "service": "axi",
-        "user_id": "u1",
-        "action": "login",
-        "metadata": {},
-    }
-    re = client.post("/events/", json=payload)
-    assert re.status_code in (200, 503)  # Allow for service unavailable due to circuit breaker or DB issues
-
-    m = client.get("/metrics")
-    assert m.status_code == 200
-    text = m.text
-    assert "http_requests_total" in text
-    assert "events_created_total" in text
+    settings.RATE_LIMIT_PER_MIN = original_limit
 
 
 class FakeRedis:
@@ -126,14 +122,12 @@ def test_analytics_uses_cache(monkeypatch):
         return FakeDB()
 
     app.dependency_overrides[deps.get_db] = override_get_db
-    client = TestClient(app)
-
-    s1 = client.get("/analytics/summary")
-    print(f"s1 status: {s1.status_code}, content: {s1.content}")
-    assert s1.status_code == 200
-    s2 = client.get("/analytics/summary")
-    print(f"s2 status: {s2.status_code}, content: {s2.content}")
-    print(f"Called count: {called['n']}")
-    assert s2.status_code == 200
-    assert called["n"] == 1  # segunda vez respondió desde cache
-
+    with TestClient(app) as client:
+        s1 = client.get("/analytics/summary")
+        print(f"s1 status: {s1.status_code}, content: {s1.content}")
+        assert s1.status_code == 200
+        s2 = client.get("/analytics/summary")
+        print(f"s2 status: {s2.status_code}, content: {s2.content}")
+        print(f"Called count: {called['n']}")
+        assert s2.status_code == 200
+        assert called["n"] == 1  # segunda vez respondió desde cache

@@ -16,3 +16,9 @@ def _disable_auth_defaults():
     settings.API_KEYS = ""
     settings.JWT_SECRET = None
     yield
+
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    # Fuerza backend asyncio para evitar cierres de loop con TestClient
+    return "asyncio"

@@ -85,24 +85,23 @@ def override_get_db():
 def test_analytics_summary_and_timeline():
     # Inyectar DB falsa
     app.dependency_overrides[deps.get_db] = override_get_db
-    client = TestClient(app)
+    with TestClient(app) as client:
+        base = datetime(2025, 1, 1, 0, 0, 0)
+        e1 = {"timestamp": base.isoformat() + "Z", "service": "axi", "user_id": "u1", "action": "login", "metadata": {}}
+        e2 = {"timestamp": (base + timedelta(seconds=10)).isoformat() + "Z", "service": "axi", "user_id": "u2", "action": "login", "metadata": {}}
+        e3 = {"timestamp": (base + timedelta(minutes=1)).isoformat() + "Z", "service": "axi", "user_id": "u3", "action": "purchase", "metadata": {}}
+        for e in (e1, e2, e3):
+            r = client.post("/events/", json=e)
+            assert r.status_code == 200
 
-    base = datetime(2025, 1, 1, 0, 0, 0)
-    e1 = {"timestamp": base.isoformat() + "Z", "service": "axi", "user_id": "u1", "action": "login", "metadata": {}}
-    e2 = {"timestamp": (base + timedelta(seconds=10)).isoformat() + "Z", "service": "axi", "user_id": "u2", "action": "login", "metadata": {}}
-    e3 = {"timestamp": (base + timedelta(minutes=1)).isoformat() + "Z", "service": "axi", "user_id": "u3", "action": "purchase", "metadata": {}}
-    for e in (e1, e2, e3):
-        r = client.post("/events/", json=e)
-        assert r.status_code == 200
+        rs = client.get("/analytics/summary", params={"service": "axi"})
+        assert rs.status_code == 200
+        summary = rs.json()
+        assert summary["by_action"]["login"] == 2
+        assert summary["by_action"]["purchase"] == 1
+        assert summary["total"] == 3
 
-    rs = client.get("/analytics/summary", params={"service": "axi"})
-    assert rs.status_code == 200
-    summary = rs.json()
-    assert summary["by_action"]["login"] == 2
-    assert summary["by_action"]["purchase"] == 1
-    assert summary["total"] == 3
-
-    rt = client.get("/analytics/timeline", params={"service": "axi"})
-    assert rt.status_code == 200
-    timeline = rt.json()
-    assert len(timeline["points"]) >= 2
+        rt = client.get("/analytics/timeline", params={"service": "axi"})
+        assert rt.status_code == 200
+        timeline = rt.json()
+        assert len(timeline["points"]) >= 2

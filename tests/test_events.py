@@ -78,27 +78,26 @@ def test_create_and_list_events():
     # Ensure auth disabled for this test
     settings.API_KEYS = ""
     app.dependency_overrides[deps.get_db] = override_get_db
-    client = TestClient(app)
+    with TestClient(app) as client:
+        payload = {
+            "timestamp": datetime(2025, 1, 1, 0, 0, 0).isoformat() + "Z",
+            "service": "axi",
+            "user_id": "u1",
+            "action": "login",
+            "metadata": {"ip": "127.0.0.1"},
+        }
 
-    payload = {
-        "timestamp": datetime(2025, 1, 1, 0, 0, 0).isoformat() + "Z",
-        "service": "axi",
-        "user_id": "u1",
-        "action": "login",
-        "metadata": {"ip": "127.0.0.1"},
-    }
+        r1 = client.post("/events/", json=payload)
+        assert r1.status_code == 200, r1.text
+        data = r1.json()
+        assert data["id"]
+        assert data["service"] == "axi"
+        assert data["action"] == "login"
 
-    r1 = client.post("/events/", json=payload)
-    assert r1.status_code == 200, r1.text
-    data = r1.json()
-    assert data["id"]
-    assert data["service"] == "axi"
-    assert data["action"] == "login"
-
-    r2 = client.get("/events/axi")
-    assert r2.status_code == 200, r2.text
-    payload2 = r2.json()
-    assert isinstance(payload2, dict)
-    assert isinstance(payload2.get("items"), list)
-    assert len(payload2["items"]) == 1
-    assert payload2["items"][0]["service"] == "axi"
+        r2 = client.get("/events/axi")
+        assert r2.status_code == 200, r2.text
+        payload2 = r2.json()
+        assert isinstance(payload2, dict)
+        assert isinstance(payload2.get("items"), list)
+        assert len(payload2["items"]) == 1
+        assert payload2["items"][0]["service"] == "axi"
