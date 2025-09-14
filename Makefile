@@ -58,38 +58,48 @@ dev-logs:
 	docker compose -f docker-compose.yml -f docker-compose.override.yml logs -f mlog-api
 
 dev-test-backend:
-	docker compose run --rm mlog-api bash -lc "pip install -q -r requirements-dev.txt && pytest -q tests/"
+	docker compose run --rm mlog-api bash -lc "pip install -q -r requirements-dev.txt && /home/appuser/.local/bin/pytest -q tests/"
 
- dev-test-frontend:
+dev-test-frontend:
 	docker compose run --rm frontend npm test --silent
+
+UID := $(shell id -u)
+GID := $(shell id -g)
 
 dev-e2e:
 	docker run --rm -t \
+	  -u $(UID):$(GID) \
 	  --network host \
 	  -v "$$PWD/frontend:/work" \
 	  -v "$$PWD/.npm-cache:/root/.npm" \
 	  -w /work \
-		  mcr.microsoft.com/playwright:v1.55.0-jammy bash -lc "npm ci && npm run e2e"
+	  mcr.microsoft.com/playwright:v1.55.0-jammy bash -lc "npm ci && npm run e2e"
 
   # Debug E2E: evita reinstalar deps; arranca preview si hace falta; modo no headless
 dev-e2e-debug:
 	docker run --rm -it \
+	  -u $(UID):$(GID) \
 	  -e DEBUG=pw:webserver \
 	  -e PWDEBUG=1 \
 	  -e PLAYWRIGHT_HEADLESS=0 \
 	  -v "$$PWD/frontend:/work" \
 	  -w /work \
-		  mcr.microsoft.com/playwright:v1.55.0-jammy bash -c '\
+	  mcr.microsoft.com/playwright:v1.55.0-jammy bash -c '\
 	    if [ ! -d node_modules ]; then npm ci; fi; \
-	    npx playwright install --with-deps || true; \
 	    E2E_BASE_URL="$${E2E_BASE_URL:-http://localhost:4173}" npx playwright test --project=chromium --trace on'
 
 dev-e2e-shell:
-	docker run --rm -it -v "$$PWD/frontend:/work" -w /work mcr.microsoft.com/playwright:v1.55.0-jammy bash
+	docker run --rm -it -u $(UID):$(GID) -v "$$PWD/frontend:/work" -w /work mcr.microsoft.com/playwright:v1.55.0-jammy bash
 
 # === Staging (pre-release) ===
 staging-build:
-	cd frontend && npm ci && npm run build
+	docker run --rm -t \
+	  -u $(UID):$(GID) \
+	  -v "$$PWD/frontend:/work" \
+	  -v "$$PWD/.npm-cache:/tmp/.npm" \
+	  -e npm_config_cache="/tmp/.npm" \
+	  -w /work \
+	  node:20-alpine sh -c "npm ci && npm run build"
 
 staging-up:
 	docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
@@ -101,4 +111,10 @@ staging-logs:
 	docker compose -f docker-compose.yml -f docker-compose.staging.yml logs -f mlog-api
 
 staging-e2e:
-		E2E_BASE_URL=http://localhost:8080 docker run --rm -t -v "$$PWD/frontend:/work" -w /work -p 4173:4173 mcr.microsoft.com/playwright:v1.55.0-jammy bash -lc "npm ci && npm run e2e"
+	E2E_BASE_URL=http://localhost:8080 docker run --rm -t \
+	  -u $(UID):$(GID) \
+	  -v "$$PWD/frontend:/work" \
+	  -v "$$PWD/.npm-cache:/tmp/.npm" \
+	  -e npm_config_cache="/tmp/.npm" \
+	  -w /work -p 4173:4173 \
+	  mcr.microsoft.com/playwright:v1.55.0-jammy bash -lc "npm ci && npm run e2e"
