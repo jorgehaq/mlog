@@ -69,6 +69,13 @@ npm run dev
 pytest tests/
 ```
 
+### Con Docker/Compose
+- Levantar stack: `make compose-up`
+- Tests backend en contenedor: `make compose-test-backend`
+- Tests frontend en contenedor: `make compose-test-frontend`
+- E2E Playwright en contenedor: `make compose-e2e`
+- Parar y limpiar: `make compose-down`
+
 ## ☁️ Despliegue en GCP (Cloud Run)
 
 ### 1. MongoDB Atlas
