@@ -48,6 +48,10 @@ class Settings:
     # Data
     EVENT_SCHEMA_VERSION: int = int(os.getenv("EVENT_SCHEMA_VERSION", 1))
     RETENTION_DAYS: int = int(os.getenv("RETENTION_DAYS", 0))
+    # Resilience
+    CIRCUIT_BREAKER_ENABLED: bool = os.getenv("CIRCUIT_BREAKER_ENABLED", "false").lower() in {"1", "true", "yes"}
+    CIRCUIT_BREAKER_FAILURES: int = int(os.getenv("CIRCUIT_BREAKER_FAILURES", 5))
+    CIRCUIT_BREAKER_RECOVERY_SECONDS: int = int(os.getenv("CIRCUIT_BREAKER_RECOVERY_SECONDS", 60))
 
 
 settings = Settings()
