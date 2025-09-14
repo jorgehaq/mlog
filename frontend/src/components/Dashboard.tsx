@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Line, Bar } from 'react-chartjs-2'
+import 'chart.js/auto'
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8000'
 
@@ -47,23 +49,43 @@ export const Dashboard: React.FC = () => {
         <div>
           <h4>Resumen</h4>
           <p>Total: {summary.total}</p>
-          <ul>
-            {Object.entries(summary.by_action).map(([k, v]) => (
-              <li key={k}><code>{k}</code>: {v}</li>
-            ))}
-          </ul>
+          <div style={{ maxWidth: 520 }}>
+            <Bar
+              data={{
+                labels: Object.keys(summary.by_action),
+                datasets: [
+                  {
+                    label: 'Eventos por acción',
+                    data: Object.values(summary.by_action),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                  }
+                ]
+              }}
+              options={{ responsive: true, plugins: { legend: { display: false } } }}
+            />
+          </div>
         </div>
       )}
       {timeline && (
         <div>
           <h4>Timeline (por minuto)</h4>
-          <ul>
-            {timeline.map((p, i) => (
-              <li key={i}><code>{p.ts}</code>: {p.count}</li>
-            ))}
-          </ul>
+          <div style={{ maxWidth: 720 }}>
+            <Line
+              data={{
+                labels: timeline.map(p => new Date(p.ts).toLocaleTimeString()),
+                datasets: [
+                  {
+                    label: 'Eventos/minuto',
+                    data: timeline.map(p => p.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)'
+                  }
+                ]
+              }}
+              options={{ responsive: true }}
+            />
+          </div>
         </div>
       )}
     </div>
   )}
-
