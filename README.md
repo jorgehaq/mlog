@@ -33,6 +33,17 @@ npm run dev
 - GET `/analytics/summary`
 - GET `/analytics/timeline`
 
+### Ejemplos curl
+
+- Crear evento (sin auth):
+  - `curl -X POST "$API_BASE/events/" -H 'Content-Type: application/json' -d '{"timestamp":"2025-01-01T00:00:00Z","service":"axi","user_id":"u1","action":"login","metadata":{}}'`
+- Crear evento (API Key):
+  - `curl -X POST "$API_BASE/events/" -H 'X-API-Key: $API_KEY' -H 'Content-Type: application/json' -d '{"timestamp":"2025-01-01T00:00:00Z","service":"axi","user_id":"u1","action":"login","metadata":{}}'`
+- Resumen analytics:
+  - `curl "$API_BASE/analytics/summary?service=axi" -H 'X-API-Key: $API_KEY'`
+- Timeline analytics:
+  - `curl "$API_BASE/analytics/timeline?service=axi" -H 'X-API-Key: $API_KEY'`
+
 ### Autenticación
 - API Keys: enviar `X-API-Key: <key>` si `API_KEYS` está configurado
 - JWT (opcional): enviar `Authorization: Bearer <token>` si `JWT_SECRET` está configurado
@@ -43,6 +54,15 @@ npm run dev
 
 ### Rate limiting
 - Límite por IP: `RATE_LIMIT_PER_MIN` (por defecto 60/min). Respuesta 429 al excederlo.
+
+### Variables de entorno principales
+- `MONGO_URI`: URI de MongoDB (soporta `MONGO_URI_FILE`).
+- `REDIS_URL`: URL de Redis para cache de analytics.
+- `API_KEYS`: Lista separada por comas de API Keys permitidas (soporta `API_KEYS_FILE`).
+- `JWT_SECRET`: Secreto para validar JWT Bearer (soporta `JWT_SECRET_FILE`).
+- `RATE_LIMIT_PER_MIN`: Límite por IP/minuto.
+- `CORS_ORIGINS`: Orígenes permitidos para CORS.
+- `ANALYTICS_CACHE_TTL`: TTL de cache de analytics en segundos.
 
 ## 🧪 Tests
 ```bash

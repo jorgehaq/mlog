@@ -7,6 +7,7 @@ from app.core.auth import require_auth
 from app.core.cache import get_redis
 from app.core.config import settings
 import json
+from app.repositories.audit_logs import aggregate_summary, aggregate_timeline
 
 
 router = APIRouter()
@@ -25,18 +26,8 @@ async def summary(
         if cached:
             return json.loads(cached)
 
-    match = {}
-    if service:
-        match["service"] = service
-    pipeline = [
-        {"$match": match},
-        {"$group": {"_id": "$action", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-    ]
     try:
-        by_action = {}
-        async for row in db.audit_logs.aggregate(pipeline):
-            by_action[str(row.get("_id"))] = int(row.get("count", 0))
+        by_action = await aggregate_summary(db, service)
         total = sum(by_action.values())
         result = {"by_action": by_action, "total": total}
     except Exception as e:
@@ -60,36 +51,8 @@ async def timeline(
         if cached:
             return json.loads(cached)
 
-    match = {}
-    if service:
-        match["service"] = service
-    time_filter = {}
-    if from_ts:
-        time_filter["$gte"] = from_ts
-    if to_ts:
-        time_filter["$lte"] = to_ts
-    if time_filter:
-        match["timestamp"] = time_filter
-    pipeline = [
-        {"$match": match},
-        {
-            "$group": {
-                "_id": {
-                    "$dateTrunc": {
-                        "date": "$timestamp",
-                        "unit": "minute",
-                    }
-                },
-                "count": {"$sum": 1},
-            }
-        },
-        {"$sort": {"_id": 1}},
-    ]
     try:
-        points = []
-        async for row in db.audit_logs.aggregate(pipeline):
-            ts = row.get("_id")
-            points.append({"ts": ts, "count": int(row.get("count", 0))})
+        points = await aggregate_timeline(db, service=service, from_ts=from_ts, to_ts=to_ts)
         result = {"points": points}
     except Exception as e:
         raise HTTPException(status_code=503, detail="analytics_unavailable") from e
